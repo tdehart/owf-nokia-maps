@@ -7,16 +7,16 @@
  * @author T. DeHart
  */
 var Map = {
-    defaults: { 
+    defaults: {
         center: [39.209, -76.867],
         zoomLevel: 10,
         components: [
         // ZoomBar provides a UI to zoom the map in & out
-        new nokia.maps.map.component.ZoomBar(), 
+        new nokia.maps.map.component.ZoomBar(),
         // We add the behavior component to allow panning / zooming of the map
         new nokia.maps.map.component.Behavior(),
         // Creates UI to easily switch between street map satellite and terrain mapview modes
-        new nokia.maps.map.component.Overview(),
+        new nokia.maps.map.component.Overview()
         // Allows us to create InfoBubbles attached to markers
         ]
     },
@@ -53,27 +53,25 @@ var Map = {
         this.searchManager = nokia.places.search.manager;
         this.routerManager = new nokia.maps.routing.Manager();
         this.routerManager.addObserver("state", this.onRouteCalculated);
-        this.TOUCH = nokia.maps.dom.Page.browser.touch,
-        this.CLICK = this.TOUCH ? "tap" : "click";        
+        this.TOUCH = nokia.maps.dom.Page.browser.touch, this.CLICK = this.TOUCH ? "tap" : "click";
 
         // Testing map capabilities...
-
         var searchTerm = {
-            "name" : "John Doe",
-            "phone" : "555-555-5555",
-            "address" : "columbia md"
+            "name": "John Doe",
+            "phone": "555-555-5555",
+            "address": "columbia md"
         };
 
         var searchTerm2 = {
-            "name" : "Bob Smith",
-            "phone" : "800-255-1952",
-            "address" : "washington dc"
+            "name": "Bob Smith",
+            "phone": "800-255-1952",
+            "address": "washington dc"
         };
 
         var searchTerm3 = {
-            "name" : "Mary Johnson",
-            "phone" : "566-255-1952",
-            "address" : "philadelphia pa"
+            "name": "Mary Johnson",
+            "phone": "566-255-1952",
+            "address": "philadelphia pa"
         };
 
         this.placeMarker(searchTerm3);
@@ -90,18 +88,17 @@ var Map = {
         var deferred = jQuery.Deferred();
 
         this.searchManager.geoCode({
-            searchTerm: address, 
+            searchTerm: address,
             onComplete: function(response, status) {
-                if (status == "OK") {
+                if(status == "OK") {
                     deferred.resolve(response);
-                }
-                else {  
+                } else {
                     console.log("Geocode was not successful for the following reason: " + status);
                 }
             }
         });
 
-        return deferred.promise();  
+        return deferred.promise();
     },
 
     /**
@@ -115,18 +112,18 @@ var Map = {
 
         // Grab address from obj
         var address = obj.address;
-        
+
         // Remove previous resultSet
-        if (this.resultSet) this.map.objects.remove(this.resultSet);
+        if(this.resultSet) this.map.objects.remove(this.resultSet);
         // Set widget's resultSet instance variable
         this.codeAddress(address).then(function(response) {
             // The function findPlaces() and reverseGeoCode() return results in slightly different formats
             var locations = response.results ? response.results.items : [response.location];
 
             me.resultSet = new nokia.maps.map.Container();
-            for (i = 0, len = locations.length; i < len; i++) {
+            for(i = 0, len = locations.length; i < len; i++) {
                 var marker = new nokia.maps.map.StandardMarker(locations[i].position, {
-                    text: i+1
+                    text: i + 1
                 });
 
                 // Attach InfoBubble to marker
@@ -139,20 +136,18 @@ var Map = {
             me.map.objects.add(me.resultSet);
             me.map.zoomTo(me.resultSet.getBoundingBox(), false);
             me.map.set("zoomLevel", 10);
-                
+
         });
     },
 
     addInfoBubble: function(marker, obj) {
         var me = this;
         marker.addListener(
-            me.CLICK,
-            function (evt) {
-                // Set the tail of the bubble to the coordinate of the marker
-                var label = "<h2>" + obj.name + "</h2>" + "<p>"
-                + obj.address + "<br />" + obj.phone + "</p>"
-                me.infoBubbles.openBubble(label, marker.coordinate);
-            });
+        me.CLICK, function(evt) {
+            // Set the tail of the bubble to the coordinate of the marker
+            var label = "<h2>" + obj.name + "</h2>" + "<p>" + obj.address + "<br />" + obj.phone + "</p>";
+            me.infoBubbles.openBubble(label, marker.coordinate);
+        });
     },
 
     /**
@@ -167,7 +162,7 @@ var Map = {
     getDirections: function(start, end) {
         var me = this;
         var mode = [{
-            type: "shortest", 
+            type: "shortest",
             transportModes: ["car"],
             options: "avoidTollroad",
             trafficMode: "default"
@@ -177,15 +172,15 @@ var Map = {
         var requests = addresses.length;
 
         // Loop through the addresses and add each one to waypoints list
-        for (var i = 0; i < addresses.length; i++) {
+        for(var i = 0; i < addresses.length; i++) {
             this.searchManager.geoCode({
                 searchTerm: addresses[i],
-                onComplete: function (response, requestStatus) {
-                    if (requestStatus == "OK") {
+                onComplete: function(response, requestStatus) {
+                    if(requestStatus == "OK") {
                         waypoints.addCoordinate(new nokia.maps.geo.Coordinate(response.location.position.latitude, response.location.position.longitude));
                     }
                     requests--;
-                    if (requests == 0) {
+                    if(requests === 0) {
                         //Calculate the route after we've gone through all requests, this will trigger a state listener
                         me.routerManager.calculateRoute(waypoints, mode.slice(0));
                     }
@@ -205,7 +200,7 @@ var Map = {
      * @see nokia.maps.util.OObject#addObserver
      */
     onRouteCalculated: function(observedRouter, key, value) {
-        if (value == "finished") {
+        if(value == "finished") {
             var routes = observedRouter.getRoutes();
 
             //create the default map representation of a route
@@ -214,7 +209,7 @@ var Map = {
 
             //Zoom to the bounding box of the route
             Map.map.zoomTo(mapRoute.getBoundingBox(), false, "default");
-        } else if (value == "failed") {
+        } else if(value == "failed") {
             console.log("The routing request failed.");
         }
     }
@@ -223,5 +218,5 @@ var Map = {
 $(document).ready(function() {
 
     // Initialize map
-    Map.initialize( document.getElementById('mapContainer') );
+    Map.initialize(document.getElementById('mapContainer'));
 });
