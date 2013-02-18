@@ -56,41 +56,8 @@ var Map = {
         this.searchManager = nokia.places.search.manager;
         this.routerManager = new nokia.maps.routing.Manager();
         this.routerManager.addObserver("state", this.onRouteCalculated);
-
         this.TOUCH = nokia.maps.dom.Page.browser.touch, this.CLICK = this.TOUCH ? "tap" : "click";
-
-        var searchTerm = {
-            "name": "John Doe",
-            "phone": "555-555-5555",
-            "address": "columbia md"
-        };
-
-        var searchTerm2 = {
-            "name": "Bob Smith",
-            "phone": "800-255-1952",
-            "address": "washington dc"
-        };
-
-        var searchTerm3 = {
-            "name": "Bob Smith",
-            "phone": "800-255-1952",
-            "address": "pa"
-        };
-
-        var searchTerm4 = {
-            "name": "Bob Smith",
-            "phone": "800-255-1952",
-            "address": "nj"
-        };
-
-        //this.placeMarker(searchTerm);
-
-        this.getDirections(searchTerm3.address, searchTerm4.address);
-
-        //setTimeout(function(){this.Map.clear();},3000);
     },
-
-
 
     /**
      * Geocode a given free form address.
@@ -227,7 +194,6 @@ var Map = {
     },
 
     clear: function() {
-        console.log("clearing");
         this.clearMarkers();
         this.clearDirections();
     },
