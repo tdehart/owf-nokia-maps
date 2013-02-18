@@ -34,6 +34,7 @@ var Map = {
     searchManager: null,
     routerManger: null,
     resultSet: null,
+    routeSet: null,
     infoBubbles: null,
     TOUCH: null,
     CLICK: null,
@@ -47,15 +48,17 @@ var Map = {
         nokia.Settings.set("appId", KeyStore.appId);
         nokia.Settings.set("authenticationToken", KeyStore.token);
         this.el = mapContainer;
+        this.resultSet = new nokia.maps.map.Container();
+        this.routeSet = [];
         this.infoBubbles = new nokia.maps.map.component.InfoBubbles();
         this.defaults.components.push(this.infoBubbles);
         this.map = new nokia.maps.map.Display(mapContainer, this.defaults);
         this.searchManager = nokia.places.search.manager;
         this.routerManager = new nokia.maps.routing.Manager();
         this.routerManager.addObserver("state", this.onRouteCalculated);
+
         this.TOUCH = nokia.maps.dom.Page.browser.touch, this.CLICK = this.TOUCH ? "tap" : "click";
 
-        // Testing map capabilities...
         var searchTerm = {
             "name": "John Doe",
             "phone": "555-555-5555",
@@ -69,15 +72,25 @@ var Map = {
         };
 
         var searchTerm3 = {
-            "name": "Mary Johnson",
-            "phone": "566-255-1952",
-            "address": "philadelphia pa"
+            "name": "Bob Smith",
+            "phone": "800-255-1952",
+            "address": "pa"
         };
 
-        this.placeMarker(searchTerm3);
+        var searchTerm4 = {
+            "name": "Bob Smith",
+            "phone": "800-255-1952",
+            "address": "nj"
+        };
 
-        this.getDirections(searchTerm.address, searchTerm2.address);
+        //this.placeMarker(searchTerm);
+
+        this.getDirections(searchTerm3.address, searchTerm4.address);
+
+        //setTimeout(function(){this.Map.clear();},3000);
     },
+
+
 
     /**
      * Geocode a given free form address.
@@ -86,7 +99,6 @@ var Map = {
      */
     codeAddress: function(address) {
         var deferred = jQuery.Deferred();
-
         this.searchManager.geoCode({
             searchTerm: address,
             onComplete: function(response, status) {
@@ -109,23 +121,19 @@ var Map = {
      */
     placeMarker: function(obj) {
         var me = this;
-
         // Grab address from obj
         var address = obj.address;
-
-        // Remove previous resultSet
-        if(this.resultSet) this.map.objects.remove(this.resultSet);
         // Set widget's resultSet instance variable
         this.codeAddress(address).then(function(response) {
             // The function findPlaces() and reverseGeoCode() return results in slightly different formats
             var locations = response.results ? response.results.items : [response.location];
 
-            me.resultSet = new nokia.maps.map.Container();
+            
+
             for(i = 0, len = locations.length; i < len; i++) {
                 var marker = new nokia.maps.map.StandardMarker(locations[i].position, {
                     text: i + 1
                 });
-
                 // Attach InfoBubble to marker
                 me.addInfoBubble(marker, obj);
                 // Add marker to resultSet
@@ -136,7 +144,6 @@ var Map = {
             me.map.objects.add(me.resultSet);
             me.map.zoomTo(me.resultSet.getBoundingBox(), false);
             me.map.set("zoomLevel", 10);
-
         });
     },
 
@@ -171,13 +178,15 @@ var Map = {
         var addresses = [start, end];
         var requests = addresses.length;
 
-        // Loop through the addresses and add each one to waypoints list
         for(var i = 0; i < addresses.length; i++) {
             this.searchManager.geoCode({
                 searchTerm: addresses[i],
                 onComplete: function(response, requestStatus) {
                     if(requestStatus == "OK") {
-                        waypoints.addCoordinate(new nokia.maps.geo.Coordinate(response.location.position.latitude, response.location.position.longitude));
+                        var coordinate = new nokia.maps.geo.Coordinate(response.location.position.latitude, response.location.position.longitude);
+                        waypoints.addCoordinate(coordinate);
+                    } else {
+                        console.log("Geocode was not successful for the following reason: " + requestStatus);
                     }
                     requests--;
                     if(requests === 0) {
@@ -205,18 +214,40 @@ var Map = {
 
             //create the default map representation of a route
             var mapRoute = new nokia.maps.routing.component.RouteResultSet(routes[0]).container;
-            Map.map.objects.add(mapRoute);
+            
+            this.Map.map.objects.add(mapRoute);
+            Map.routeSet.push(mapRoute);
 
             //Zoom to the bounding box of the route
             Map.map.zoomTo(mapRoute.getBoundingBox(), false, "default");
+
         } else if(value == "failed") {
             console.log("The routing request failed.");
         }
-    }
+    },
+
+    clear: function() {
+        console.log("clearing");
+        this.clearMarkers();
+        this.clearDirections();
+    },
+
+    clearMarkers: function() {
+        if(this.resultSet) this.map.objects.remove(this.resultSet);
+        return this;
+    },
+
+    clearDirections: function() {
+        for(var i = 0; i < this.routeSet.length; i++) {
+            this.map.objects.remove(this.routeSet[i]);
+        }
+        return this;
+    },
+
+    save: function() {}
 };
 
 $(document).ready(function() {
-
     // Initialize map
     Map.initialize(document.getElementById('mapContainer'));
 });

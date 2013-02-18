@@ -8,30 +8,15 @@ if(OWF.Util.isRunningInOWF()) {
             namespace: OWF.getInstanceId(),
             name: 'widgetstate',
             value: OWF.Util.toString(this.state),
-            onSuccess: function() {
-                //console.log(arguments)
-            },
-            onFailure: function() {}
+            onSuccess: function() { },
+            onFailure: function() { }
         });
     };
-
-    Map.setPrintEnabled = function(enabled) {
-        OWF.Chrome.updateHeaderButtons({
-            items: [{
-                itemId: 'print',
-                type: 'print',
-                disabled: !enabled
-            }]
-        });
-    };
-
 
     // -----------------------------------
     // Initialize
     // -----------------------------------
     OWF.ready(function() {
-
-
         // -----------------------------------
         // Check for launch data
         // -----------------------------------
@@ -40,7 +25,6 @@ if(OWF.Util.isRunningInOWF()) {
             Map.placeMarker(launchData);
         }
 
-
         // -----------------------------------
         // Retrive saved state
         // -----------------------------------
@@ -48,7 +32,6 @@ if(OWF.Util.isRunningInOWF()) {
             namespace: OWF.getInstanceId(),
             name: 'widgetstate',
             onSuccess: function(response) {
-
                 if(response.value) {
                     Map.setState(OWF.Util.parseJson(response.value));
                 }
@@ -56,14 +39,12 @@ if(OWF.Util.isRunningInOWF()) {
             }
         });
 
-
         // -----------------------------------
         // Subscribe to channel
         // -----------------------------------
-        OWF.Eventing.subscribe('org.owfgoss.owf.examples.NokiaMapsExample.plotAddress', function(sender, msg, channel) {
-            Map.placeMarker(msg);
-        });
-
+         OWF.Eventing.subscribe('org.owfgoss.owf.examples.NokiaMapsExample.plotAddress', function(sender, msg, channel) {
+             Map.placeMarker(msg);
+         });
 
         // -----------------------------------
         // Setup receive intents
@@ -73,9 +54,7 @@ if(OWF.Util.isRunningInOWF()) {
             action: 'plot',
             dataType: 'application/vnd.owf.sample.address'
         }, function(sender, intent, msg) {
-
             Map.placeMarker(msg);
-
         });
 
 
@@ -86,39 +65,6 @@ if(OWF.Util.isRunningInOWF()) {
         }, function(sender, intent, msg) {
 
             Map.getDirections(msg[0], msg[1]);
-
-        });
-
-
-        // -----------------------------------
-        // Add print button to widget chrome
-        // -----------------------------------
-        OWF.Chrome.insertHeaderButtons({
-            items: [{
-                xtype: 'widgettool',
-                type: 'print',
-                itemId: 'print',
-                tooltip: {
-                    text: 'Print Directions!'
-                },
-                handler: function(sender, data) {
-                    Map.toggleMapPrintView();
-                }
-            }]
-        });
-
-
-        // -----------------------------------
-        // Toggle chrome button state
-        // -----------------------------------
-        $.subscribe('marker:pan', function() {
-            //console.log('disabling print button', OWF.getInstanceId());
-            Map.setPrintEnabled(false);
-        });
-
-        $.subscribe('navigate', function() {
-            //console.log('enabling print button', OWF.getInstanceId());
-            Map.setPrintEnabled(true);
         });
 
 
@@ -128,13 +74,10 @@ if(OWF.Util.isRunningInOWF()) {
         var widgetState = Ozone.state.WidgetState.getInstance({
             onStateEventReceived: function(sender, msg) {
                 var event = msg.eventName;
-
                 if(event === 'beforeclose') {
-
                     widgetState.removeStateEventOverrides({
                         event: [event],
                         callback: function() {
-
                             OWF.Preferences.deleteUserPreference({
                                 namespace: OWF.getInstanceId(),
                                 name: 'widgetstate',
@@ -142,14 +85,8 @@ if(OWF.Util.isRunningInOWF()) {
                                     widgetState.closeWidget();
                                 }
                             });
-
                         }
                     });
-
-                } else if(event === 'activate' || event === 'show') {
-                    Map.el.style.display = 'block';
-                } else if(event === 'hide') {
-                    Map.el.style.display = 'none';
                 }
             }
         });
@@ -158,12 +95,6 @@ if(OWF.Util.isRunningInOWF()) {
         // widget state data
         widgetState.addStateEventOverrides({
             events: ['beforeclose']
-        });
-
-        // listen for  activate and hide events so that we can
-        // hide map object to fix a bug in Google Maps
-        widgetState.addStateEventListeners({
-            events: ['activate', 'hide', 'show']
         });
 
         OWF.notifyWidgetReady();
