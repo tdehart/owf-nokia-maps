@@ -33,11 +33,18 @@ var Map = {
     map: null,
     searchManager: null,
     routerManger: null,
-    resultSet: null,
     routeSet: null,
+    resultSet: null,
+    state: {
+        addresses: null,
+        markers: null,
+        center: null,
+        zoomLevel: null
+    },
     infoBubbles: null,
     TOUCH: null,
     CLICK: null,
+
 
     /**
      * Initialize a Nokia Map on the given DOM element.
@@ -45,11 +52,14 @@ var Map = {
      * @constructor
      */
     initialize: function(mapContainer) {
+        var me = this;
         nokia.Settings.set("appId", KeyStore.appId);
         nokia.Settings.set("authenticationToken", KeyStore.token);
         this.el = mapContainer;
-        this.resultSet = new nokia.maps.map.Container();
         this.routeSet = [];
+        this.state.addresses = [];
+        this.state.markers = [];
+        this.state.center = {};
         this.infoBubbles = new nokia.maps.map.component.InfoBubbles();
         this.defaults.components.push(this.infoBubbles);
         this.map = new nokia.maps.map.Display(mapContainer, this.defaults);
@@ -57,60 +67,67 @@ var Map = {
         this.routerManager = new nokia.maps.routing.Manager();
         this.routerManager.addObserver("state", this.onRouteCalculated);
         this.TOUCH = nokia.maps.dom.Page.browser.touch, this.CLICK = this.TOUCH ? "tap" : "click";
+
+        //Triggered when the map's view changes
+        this.map.addListener("mapviewchangeend", function(evt) {
+            me.state.center = evt.display.center;
+            me.state.center.altitude = 0;
+            me.state.zoomLevel = me.map.zoomLevel;
+
+            me.save();
+        });
     },
 
-    /**
-     * Geocode a given free form address.
-     * @param {String} address Free form address or place name.
-     * @returns {jQuery.Deferred} Promise with result data.
-     */
-    codeAddress: function(address) {
-        var deferred = jQuery.Deferred();
+    setState: function (state) {
+        console.log("in set state");
+        this.clear();
+        if (state.center) {
+            this.map.setCenter(state.center);
+            this.map.set("zoomLevel", state.zoomLevel);
+        }
+
+        // if(state.addresses && state.addresses.length > 0) {
+        //     Map.getDirections(state.addresses[0], state.addresses[1]);
+        // }
+        // else if(state.markers) {
+        //     for (var i = 0, len = state.markers.length; i < len; i++) {
+        //         Map.placeMarker(state.markers[i]);
+        //     }
+        // }
+    },
+
+    processResults: function(data, requestStatus, requestId) {
+        var i, len, locations, marker;
+        var me = this.Map;
+        if (requestStatus == "OK") {
+            // The function findPlaces() and reverseGeoCode() return results in slightly different formats
+            locations = data.results ? data.results.items : [data.location];
+            if (me.resultSet) me.map.objects.remove(me.resultSet);
+            me.resultSet = new nokia.maps.map.Container();
+            if (locations.length > 0) {
+                for (i = 0, len = locations.length; i < len; i++) {
+                    marker = new nokia.maps.map.StandardMarker(locations[i].position, { text: i+1 });
+                    me.resultSet.objects.add(marker);
+                }
+                // Next we add the marker(s) to the map's object collection so they will be rendered onto the map
+                me.map.objects.add(me.resultSet);
+                
+                // We zoom the map to a view that encapsulates all the markers into map's viewport
+                me.map.zoomTo(me.resultSet.getBoundingBox(), false);
+                me.map.set('zoomLevel', 10);
+            } else {
+                console.log("Location not found");
+            }
+        } else {
+            console.log("Search request failed");
+        }
+    },
+
+    placeMarker: function(obj) {
+        var address = obj.address;
         this.searchManager.geoCode({
             searchTerm: address,
-            onComplete: function(response, status) {
-                if(status == "OK") {
-                    deferred.resolve(response);
-                } else {
-                    console.log("Geocode was not successful for the following reason: " + status);
-                }
-            }
-        });
-
-        return deferred.promise();
-    },
-
-    /**
-     * Place a marker on the map.
-     * @public
-     * @param {Object} obj Object that has an address property to indicate
-     * where the marker should be placed.
-     */
-    placeMarker: function(obj) {
-        var me = this;
-        // Grab address from obj
-        var address = obj.address;
-        // Set widget's resultSet instance variable
-        this.codeAddress(address).then(function(response) {
-            // The function findPlaces() and reverseGeoCode() return results in slightly different formats
-            var locations = response.results ? response.results.items : [response.location];
-
-            
-
-            for(i = 0, len = locations.length; i < len; i++) {
-                var marker = new nokia.maps.map.StandardMarker(locations[i].position, {
-                    text: i + 1
-                });
-                // Attach InfoBubble to marker
-                me.addInfoBubble(marker, obj);
-                // Add marker to resultSet
-                me.resultSet.objects.add(marker);
-            }
-
-            // Place the marker and zoom to it
-            me.map.objects.add(me.resultSet);
-            me.map.zoomTo(me.resultSet.getBoundingBox(), false);
-            me.map.set("zoomLevel", 10);
+            onComplete: this.processResults
         });
     },
 
@@ -135,6 +152,7 @@ var Map = {
      */
     getDirections: function(start, end) {
         var me = this;
+        me.clear();
         var mode = [{
             type: "shortest",
             transportModes: ["car"],
@@ -199,7 +217,10 @@ var Map = {
     },
 
     clearMarkers: function() {
-        if(this.resultSet) this.map.objects.remove(this.resultSet);
+        if(this.resultSet) {
+            console.log("attempting to clear", this.resultSet.objects);
+            this.map.objects.remove(this.resultSet);
+        }
         return this;
     },
 
