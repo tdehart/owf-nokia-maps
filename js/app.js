@@ -56,7 +56,6 @@ var Map = {
         nokia.Settings.set("appId", KeyStore.appId);
         nokia.Settings.set("authenticationToken", KeyStore.token);
         this.el = mapContainer;
-        this.routeSet = [];
         this.state.addresses = [];
         this.state.markers = [];
         this.state.center = {};
@@ -78,10 +77,10 @@ var Map = {
         });
     },
 
-    setState: function (state) {
+    setState: function(state) {
         console.log("in set state");
         this.clear();
-        if (state.center) {
+        if(state.center) {
             this.map.setCenter(state.center);
             this.map.set("zoomLevel", state.zoomLevel);
         }
@@ -96,25 +95,29 @@ var Map = {
         // }
     },
 
-    processResults: function(data, requestStatus, requestId) {
+    processResults: function(data, requestStatus, requestId, contact) {
         var i, len, locations, marker;
-        var me = this.Map;
-        if (requestStatus == "OK") {
+        var me = this;
+        if(requestStatus == "OK") {
             // The function findPlaces() and reverseGeoCode() return results in slightly different formats
             locations = data.results ? data.results.items : [data.location];
-            if (me.resultSet) me.map.objects.remove(me.resultSet);
+            if(me.resultSet) me.map.objects.remove(me.resultSet);
             me.resultSet = new nokia.maps.map.Container();
-            if (locations.length > 0) {
-                for (i = 0, len = locations.length; i < len; i++) {
-                    marker = new nokia.maps.map.StandardMarker(locations[i].position, { text: i+1 });
+            if(locations.length > 0) {
+                for(i = 0, len = locations.length; i < len; i++) {
+                    marker = new nokia.maps.map.StandardMarker(locations[i].position, {
+                        text: i+1
+                    });
+                    me.addInfoBubble(marker, contact);
                     me.resultSet.objects.add(marker);
                 }
                 // Next we add the marker(s) to the map's object collection so they will be rendered onto the map
                 me.map.objects.add(me.resultSet);
-                
+
                 // We zoom the map to a view that encapsulates all the markers into map's viewport
                 me.map.zoomTo(me.resultSet.getBoundingBox(), false);
                 me.map.set('zoomLevel', 10);
+
             } else {
                 console.log("Location not found");
             }
@@ -124,11 +127,17 @@ var Map = {
     },
 
     placeMarker: function(obj) {
+        var me = this;
+        var contact = obj;
         var address = obj.address;
         this.searchManager.geoCode({
             searchTerm: address,
-            onComplete: this.processResults
+            onComplete: function(data, requestStatus, requestId, obj) {
+                me.processResults(data, requestStatus, requestId, contact);
+            }
         });
+
+
     },
 
     addInfoBubble: function(marker, obj) {
@@ -136,7 +145,7 @@ var Map = {
         marker.addListener(
         me.CLICK, function(evt) {
             // Set the tail of the bubble to the coordinate of the marker
-            var label = "<h2>" + obj.name + "</h2>" + "<p>" + obj.address + "<br />" + obj.phone + "</p>";
+            var label = "<h2>" + obj.name + "</h2>" + "<p>" + obj.address + "<br />" + obj.phoneNumber + "</p>";
             me.infoBubbles.openBubble(label, marker.coordinate);
         });
     },
@@ -152,7 +161,6 @@ var Map = {
      */
     getDirections: function(start, end) {
         var me = this;
-        me.clear();
         var mode = [{
             type: "shortest",
             transportModes: ["car"],
@@ -194,17 +202,19 @@ var Map = {
      * @see nokia.maps.util.OObject#addObserver
      */
     onRouteCalculated: function(observedRouter, key, value) {
+        var me = this.Map;
         if(value == "finished") {
             var routes = observedRouter.getRoutes();
 
+            if(me.mapRoute) me.map.objects.remove(me.mapRoute);
+
             //create the default map representation of a route
-            var mapRoute = new nokia.maps.routing.component.RouteResultSet(routes[0]).container;
-            
-            this.Map.map.objects.add(mapRoute);
-            Map.routeSet.push(mapRoute);
+            me.mapRoute = new nokia.maps.routing.component.RouteResultSet(routes[0]).container;
+            console.log(me.mapRoute);
+            me.map.objects.add(me.mapRoute);
 
             //Zoom to the bounding box of the route
-            Map.map.zoomTo(mapRoute.getBoundingBox(), false, "default");
+            me.map.zoomTo(me.mapRoute.getBoundingBox(), false, "default");
 
         } else if(value == "failed") {
             console.log("The routing request failed.");
@@ -217,17 +227,12 @@ var Map = {
     },
 
     clearMarkers: function() {
-        if(this.resultSet) {
-            console.log("attempting to clear", this.resultSet.objects);
-            this.map.objects.remove(this.resultSet);
-        }
+        if(this.resultSet) this.map.objects.remove(this.resultSet);
         return this;
     },
 
     clearDirections: function() {
-        for(var i = 0; i < this.routeSet.length; i++) {
-            this.map.objects.remove(this.routeSet[i]);
-        }
+        if(this.mapRoute) me.map.objects.remove(this.mapRoute);
         return this;
     },
 
