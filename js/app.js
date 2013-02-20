@@ -78,7 +78,6 @@ var Map = {
     },
 
     setState: function(state) {
-        console.log("in set state");
         this.clear();
         if(state.center) {
             this.map.setCenter(state.center);
@@ -101,7 +100,8 @@ var Map = {
         if(requestStatus == "OK") {
             // The function findPlaces() and reverseGeoCode() return results in slightly different formats
             locations = data.results ? data.results.items : [data.location];
-            if(me.resultSet) me.map.objects.remove(me.resultSet);
+
+            //if(me.resultSet) me.map.objects.remove(me.resultSet);
             me.resultSet = new nokia.maps.map.Container();
             if(locations.length > 0) {
                 for(i = 0, len = locations.length; i < len; i++) {
@@ -130,14 +130,13 @@ var Map = {
         var me = this;
         var contact = obj;
         var address = obj.address;
+        me.clear();
         this.searchManager.geoCode({
             searchTerm: address,
             onComplete: function(data, requestStatus, requestId, obj) {
                 me.processResults(data, requestStatus, requestId, contact);
             }
         });
-
-
     },
 
     addInfoBubble: function(marker, obj) {
@@ -164,7 +163,7 @@ var Map = {
         var mode = [{
             type: "shortest",
             transportModes: ["car"],
-            options: "avoidTollroad",
+            options: "",
             trafficMode: "default"
         }];
         var waypoints = new nokia.maps.routing.WaypointParameterList();
@@ -184,6 +183,7 @@ var Map = {
                     requests--;
                     if(requests === 0) {
                         //Calculate the route after we've gone through all requests, this will trigger a state listener
+                        me.clear();
                         me.routerManager.calculateRoute(waypoints, mode.slice(0));
                     }
                 }
@@ -206,11 +206,10 @@ var Map = {
         if(value == "finished") {
             var routes = observedRouter.getRoutes();
 
-            if(me.mapRoute) me.map.objects.remove(me.mapRoute);
+            //if(me.mapRoute) me.map.objects.remove(me.mapRoute);
 
             //create the default map representation of a route
             me.mapRoute = new nokia.maps.routing.component.RouteResultSet(routes[0]).container;
-            console.log(me.mapRoute);
             me.map.objects.add(me.mapRoute);
 
             //Zoom to the bounding box of the route
@@ -232,7 +231,7 @@ var Map = {
     },
 
     clearDirections: function() {
-        if(this.mapRoute) me.map.objects.remove(this.mapRoute);
+        if(this.mapRoute) this.map.objects.remove(this.mapRoute);
         return this;
     },
 
