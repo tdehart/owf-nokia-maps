@@ -33,7 +33,7 @@ var Map = {
     map: null,
     searchManager: null,
     routerManger: null,
-    resultSet: null,
+    results: null,
     state: {
         route: null,
         marker: null,
@@ -58,6 +58,7 @@ var Map = {
         this.infoBubbles = new nokia.maps.map.component.InfoBubbles();
         this.defaults.components.push(this.infoBubbles);
         this.map = new nokia.maps.map.Display(mapContainer, this.defaults);
+        this.results = [];
         this.searchManager = nokia.places.search.manager;
         this.routerManager = new nokia.maps.routing.Manager();
         this.routerManager.addObserver("state", this.onRouteCalculated);
@@ -90,8 +91,6 @@ var Map = {
         if(requestStatus == "OK") {
             // The function findPlaces() and reverseGeoCode() return results in slightly different formats
             locations = data.results ? data.results.items : [data.location];
-
-            //if(me.resultSet) me.map.objects.remove(me.resultSet);
             me.resultSet = new nokia.maps.map.Container();
             if(locations.length > 0) {
                 for(i = 0, len = locations.length; i < len; i++) {
@@ -104,6 +103,7 @@ var Map = {
                 }
                 // Next we add the marker(s) to the map's object collection so they will be rendered onto the map
                 me.map.objects.add(me.resultSet);
+                me.results.push(me.resultSet);
 
                 // We zoom the map to a view that encapsulates all the markers into map's viewport
                 me.map.zoomTo(me.resultSet.getBoundingBox(), false);
@@ -218,18 +218,17 @@ var Map = {
     },
 
     clearMarkers: function() {
-        if(this.resultSet) {
-            this.map.objects.remove(this.resultSet);
-            this.resultSet = [];
-            this.state.marker = null;
+        for(var i = 0; i < this.results.length; i++) {
+            this.map.objects.remove(this.results[i]);
         }
+
+        this.state.marker = null;
         return this;
     },
 
     clearDirections: function() {
         if(this.mapRoute) {
             this.map.objects.remove(this.mapRoute);
-            this.routeSet = [];
             this.state.route = null;
         }
         return this;
