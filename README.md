@@ -4,4 +4,7 @@ owf-nokia-maps is a JavaScript widget for the [Ozone Widget Framework](https://g
 
 For this widget to function, you must provide a [Nokia Developer's key](http://developer.here.net/) defined in js/key.js. Keep your key private!
 
+![Intents](http://i.imgur.com/J8FaMHE.png)
+
 ![Nokia Maps](http://i.imgur.com/NoMVqIS.png)
+
