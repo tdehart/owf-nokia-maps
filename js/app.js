@@ -33,11 +33,10 @@ var Map = {
     map: null,
     searchManager: null,
     routerManger: null,
-    routeSet: null,
     resultSet: null,
     state: {
-        addresses: null,
-        markers: null,
+        route: null,
+        marker: null,
         center: null,
         zoomLevel: null
     },
@@ -56,9 +55,6 @@ var Map = {
         nokia.Settings.set("appId", KeyStore.appId);
         nokia.Settings.set("authenticationToken", KeyStore.token);
         this.el = mapContainer;
-        this.state.addresses = [];
-        this.state.markers = [];
-        this.state.center = {};
         this.infoBubbles = new nokia.maps.map.component.InfoBubbles();
         this.defaults.components.push(this.infoBubbles);
         this.map = new nokia.maps.map.Display(mapContainer, this.defaults);
@@ -84,14 +80,8 @@ var Map = {
             this.map.set("zoomLevel", state.zoomLevel);
         }
 
-        // if(state.addresses && state.addresses.length > 0) {
-        //     Map.getDirections(state.addresses[0], state.addresses[1]);
-        // }
-        // else if(state.markers) {
-        //     for (var i = 0, len = state.markers.length; i < len; i++) {
-        //         Map.placeMarker(state.markers[i]);
-        //     }
-        // }
+        if(state.marker) this.placeMarker(state.marker);
+        if(state.route) this.getDirections(state.route[0], state.route[1]);
     },
 
     processResults: function(data, requestStatus, requestId, contact) {
@@ -110,6 +100,7 @@ var Map = {
                     });
                     me.addInfoBubble(marker, contact);
                     me.resultSet.objects.add(marker);
+                    me.state.marker = contact;
                 }
                 // Next we add the marker(s) to the map's object collection so they will be rendered onto the map
                 me.map.objects.add(me.resultSet);
@@ -184,6 +175,7 @@ var Map = {
                     if(requests === 0) {
                         //Calculate the route after we've gone through all requests, this will trigger a state listener
                         me.clear();
+                        me.state.route = addresses;
                         me.routerManager.calculateRoute(waypoints, mode.slice(0));
                     }
                 }
@@ -226,16 +218,24 @@ var Map = {
     },
 
     clearMarkers: function() {
-        if(this.resultSet) this.map.objects.remove(this.resultSet);
+        if(this.resultSet) {
+            this.map.objects.remove(this.resultSet);
+            this.resultSet = [];
+            this.state.marker = null;
+        }
         return this;
     },
 
     clearDirections: function() {
-        if(this.mapRoute) this.map.objects.remove(this.mapRoute);
+        if(this.mapRoute) {
+            this.map.objects.remove(this.mapRoute);
+            this.routeSet = [];
+            this.state.route = null;
+        }
         return this;
     },
 
-    save: function() {}
+    save: function() { }
 };
 
 $(document).ready(function() {
