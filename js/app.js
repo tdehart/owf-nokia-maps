@@ -215,15 +215,21 @@ var Map = {
     clear: function() {
         this.clearMarkers();
         this.clearDirections();
+        this.clearInfoBubbles();
     },
 
     clearMarkers: function() {
+        //Loop through the list of marker containers and remove each from the map
         for(var i = 0; i < this.results.length; i++) {
             this.map.objects.remove(this.results[i]);
         }
 
         this.state.marker = null;
         return this;
+    },
+
+    clearInfoBubbles: function() {
+        $('.nm_infoBubble').remove();
     },
 
     clearDirections: function() {
