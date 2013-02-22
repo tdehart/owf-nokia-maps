@@ -1,0 +1,27 @@
+<script type="text/javascript">
+	$("#nokiaKeyForm").submit(function() {
+		var key = { };
+		key["appId"] = $("#appId").val();
+		key["token"] = $("#authToken").val();
+
+		OWF.Preferences.setUserPreference({
+			namespace: "nokiaMaps",
+			name: 'nokiaKey',
+			value: OWF.Util.toString(key),
+			onSuccess: function() {},
+			onFailure: function() {}
+		});
+	});
+</script>
+
+<form id="nokiaKeyForm">
+	<div class="alert alert-error">
+		<strong>You need a Nokia Developer's Key to use this widget. Get one <a href="https://developer.here.com" target="_blank">here.</a></strong>
+	</div>
+	<fieldset>
+		<legend>Enter your Nokia Developer Key</legend>
+		<input id="appId" type="text" placeholder="appId">
+		<input id="authToken" type="text" placeholder="authenticationToken">
+		<br /><button type="submit" class="btn">Submit</button>
+	</fieldset>
+</form>

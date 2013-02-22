@@ -44,7 +44,6 @@ var Map = {
     TOUCH: null,
     CLICK: null,
 
-
     /**
      * Initialize a Nokia Map on the given DOM element.
      * @param Object that corresponds to a DIV in the HTML DOM.
@@ -52,8 +51,6 @@ var Map = {
      */
     initialize: function(mapContainer) {
         var me = this;
-        nokia.Settings.set("appId", KeyStore.appId);
-        nokia.Settings.set("authenticationToken", KeyStore.token);
         this.el = mapContainer;
         this.infoBubbles = new nokia.maps.map.component.InfoBubbles();
         this.defaults.components.push(this.infoBubbles);
@@ -72,6 +69,11 @@ var Map = {
 
             me.save();
         });
+    },
+
+    setDeveloperKey: function(developerKey) {
+        nokia.Settings.set("appId", developerKey.appId);
+        nokia.Settings.set("authenticationToken", developerKey.token);
     },
 
     setState: function(state) {
@@ -242,8 +244,3 @@ var Map = {
 
     save: function() { }
 };
-
-$(document).ready(function() {
-    // Initialize map
-    Map.initialize(document.getElementById('mapContainer'));
-});
