@@ -1,55 +1,24 @@
-if(OWF.Util.isRunningInOWF()) {
+if (OWF.Util.isRunningInOWF()) {
     // -----------------------------------
     // Initialize
     // -----------------------------------
     OWF.ready(function() {
+        var mapEl = document.getElementById('mapContainer');
+        var keyFormEl = document.getElementById('keyForm');
+
         // -----------------------------------
-        // Retrieve Nokia developer's key
+        // Retrieve Nokia developer's key. If found, set up the OWF APIs otherwise load key input form
         // -----------------------------------
         OWF.Preferences.getUserPreference({
             namespace: 'nokiaMaps',
             name: 'nokiaKey',
             onSuccess: function(response) {
-                var mapEl = document.getElementById('mapContainer');
-                var keyFormEl = document.getElementById('keyForm');
-                if(response.value) {
+                if (response.value) {
                     Map.setDeveloperKey(OWF.Util.parseJson(response.value));
                     $(keyFormEl).css('display', 'none');
                     $(mapEl).css('display', 'block');
                     Map.initialize(mapEl);
-                    // -----------------------------------
-                    // Add save behaviour if widget is in OWF
-                    // -----------------------------------
-                    Map.save = function() {
-                        OWF.Preferences.setUserPreference({
-                            namespace: OWF.getInstanceId(),
-                            name: 'widgetstate',
-                            value: OWF.Util.toString(this.state),
-                            onSuccess: function() {},
-                            onFailure: function() {}
-                        });
-                    };
-
-                    // -----------------------------------
-                    // Check for launch data
-                    // -----------------------------------
-                    var launchData = OWF.Launcher.getLaunchData();
-                    if(launchData && launchData.address) {
-                        Map.placeMarker(launchData);
-                    }
-
-                    // -----------------------------------
-                    // Retrieve saved map state
-                    // -----------------------------------
-                    OWF.Preferences.getUserPreference({
-                        namespace: OWF.getInstanceId(),
-                        name: 'widgetstate',
-                        onSuccess: function(response) {
-                            if(response.value) {
-                                Map.setState(OWF.Util.parseJson(response.value));
-                            }
-                        }
-                    });
+                    setupApis();
                 } else {
                     console.log("Didn't find nokia key preference");
                     $(mapEl).css('display', 'none');
@@ -59,40 +28,98 @@ if(OWF.Util.isRunningInOWF()) {
             }
         });
 
-        $("#nokiaKeyForm").submit(function(e) {
-            e.preventDefault();
-            alert("test");
-            return false;
-        });
+        //This is called when the map has a key
 
-        // -----------------------------------
-        // Subscribe to channel
-        // -----------------------------------
-        OWF.Eventing.subscribe('org.owfgoss.owf.examples.NokiaMapsExample.plotAddress', function(sender, msg, channel) {
-            Map.placeMarker(msg);
-        });
+        function setupApis() {
+            // -----------------------------------
+            // Add save behaviour if widget is in OWF
+            // -----------------------------------
+            Map.save = function() {
+                OWF.Preferences.setUserPreference({
+                    namespace: OWF.getInstanceId(),
+                    name: 'widgetstate',
+                    value: OWF.Util.toString(this.state),
+                    onSuccess: function() {},
+                    onFailure: function() {}
+                });
+            };
 
-        // -----------------------------------
-        // Setup receive intents
-        // -----------------------------------
-        // Registering for plot intent, and place marker when intent is received.
-        OWF.Intents.receive({
-            action: 'plot',
-            dataType: 'application/vnd.owf.sample.address'
-        }, function(sender, intent, msg) {
-            Map.placeMarker(msg);
-        });
+            // -----------------------------------
+            // Check for launch data
+            // -----------------------------------
+            var launchData = OWF.Launcher.getLaunchData();
+            if (launchData && launchData.address) {
+                Map.placeMarker(launchData);
+            }
+
+            // -----------------------------------
+            // Retrieve saved map state
+            // -----------------------------------
+            OWF.Preferences.getUserPreference({
+                namespace: OWF.getInstanceId(),
+                name: 'widgetstate',
+                onSuccess: function(response) {
+                    if (response.value) {
+                        Map.setState(OWF.Util.parseJson(response.value));
+                    }
+                }
+            });
+
+            // -----------------------------------
+            // Subscribe to channel
+            // -----------------------------------
+            OWF.Eventing.subscribe('org.owfgoss.owf.examples.NokiaMapsExample.plotAddress', function(sender, msg, channel) {
+                Map.placeMarker(msg);
+            });
+
+            // -----------------------------------
+            // Setup receive intents
+            // -----------------------------------
+            // Registering for plot intent, and place marker when intent is received.
+            OWF.Intents.receive({
+                action: 'plot',
+                dataType: 'application/vnd.owf.sample.address'
+            }, function(sender, intent, msg) {
+                Map.placeMarker(msg);
+            });
 
 
-        // Registering for navigate intent, and getting directions when intent is received.
-        OWF.Intents.receive({
-            action: 'navigate',
-            dataType: 'application/vnd.owf.sample.addresses'
-        }, function(sender, intent, msg) {
+            // Registering for navigate intent, and getting directions when intent is received.
+            OWF.Intents.receive({
+                action: 'navigate',
+                dataType: 'application/vnd.owf.sample.addresses'
+            }, function(sender, intent, msg) {
+                Map.getDirections(msg[0], msg[1]);
+            });
 
-            Map.getDirections(msg[0], msg[1]);
-        });
-
+            // Inserting button that allows the user remove the API Key preference
+            OWF.Chrome.insertHeaderButtons({
+                pos: 0,
+                items: [{
+                    xtype: 'button',
+                    icon: './themes/common/images/logout.png',
+                    itemId: 'delete_key',
+                    tooltip: {
+                        text: 'Delete Nokia API key preference'
+                    },
+                    handler: function(sender, data) {
+                        var choice = confirm("Clear Nokia API key preference?");
+                        if (choice) {
+                            OWF.Preferences.deleteUserPreference({
+                                namespace: 'nokiaMaps',
+                                name: 'nokiaKey',
+                                onSuccess: function(response) {
+                                    OWF.Chrome.removeHeaderButtons({
+                                        items: [{ itemId: 'delete_key' }]
+                                    });
+                                    location.reload();
+                                }
+                            });
+                        }
+                    }
+                }]
+            });
+        }
 
         // -----------------------------------
         // Clean up when widget closes
@@ -100,7 +127,7 @@ if(OWF.Util.isRunningInOWF()) {
         var widgetState = Ozone.state.WidgetState.getInstance({
             onStateEventReceived: function(sender, msg) {
                 var event = msg.eventName;
-                if(event === 'beforeclose') {
+                if (event === 'beforeclose') {
                     widgetState.removeStateEventOverrides({
                         event: [event],
                         callback: function() {
