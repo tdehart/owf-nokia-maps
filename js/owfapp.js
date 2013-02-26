@@ -4,7 +4,7 @@ if (OWF.Util.isRunningInOWF()) {
     // -----------------------------------
     OWF.ready(function() {
         var mapEl = document.getElementById('mapContainer');
-        var keyFormEl = document.getElementById('keyForm');
+        var noMapEl = document.getElementById('noMap');
 
         // -----------------------------------
         // Retrieve Nokia developer's key. If found, set up the OWF APIs otherwise load key input form
@@ -13,22 +13,29 @@ if (OWF.Util.isRunningInOWF()) {
             namespace: 'nokiaMaps',
             name: 'nokiaKey',
             onSuccess: function(response) {
-                if (response.value) {
-                    Map.setDeveloperKey(OWF.Util.parseJson(response.value));
-                    $(keyFormEl).css('display', 'none');
-                    $(mapEl).css('display', 'block');
-                    Map.initialize(mapEl);
-                    setupApis();
+                if (Map) {
+                    if (response.value) {
+                        Map.setDeveloperKey(OWF.Util.parseJson(response.value));
+                        $(noMapEl).css('display', 'none');
+                        $(mapEl).css('display', 'block');
+                        Map.initialize(mapEl);
+                        setupApis();
+                    } else {
+                        console.log("Didn't find nokia key preference");
+                        $(mapEl).css('display', 'none');
+                        $(noMapEl).css('display', 'block');
+                        $(noMapEl).load('views/keyForm.html');
+                    }
                 } else {
                     console.log("Didn't find nokia key preference");
                     $(mapEl).css('display', 'none');
-                    $(keyFormEl).css('display', 'block');
-                    $(keyFormEl).load('keyForm.html');
+                    $(noMapEl).css('display', 'block');
+                    $(noMapEl).load('views/failedToLoad.html');
                 }
             }
         });
 
-        //This is called when the map has a key
+        //Set up all of the OWF APIs once the Nokia API key is found
 
         function setupApis() {
             // -----------------------------------
@@ -110,7 +117,9 @@ if (OWF.Util.isRunningInOWF()) {
                                 name: 'nokiaKey',
                                 onSuccess: function(response) {
                                     OWF.Chrome.removeHeaderButtons({
-                                        items: [{ itemId: 'delete_key' }]
+                                        items: [{
+                                            itemId: 'delete_key'
+                                        }]
                                     });
                                     location.reload();
                                 }
