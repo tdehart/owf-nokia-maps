@@ -1,18 +1,17 @@
 <script type="text/javascript">
-$("#nokiaKeyForm").submit(function() {
-	var key = { };
-	key["appId"] = $("#appId").val();
-	key["token"] = $("#authToken").val();
+	$("#nokiaKeyForm").submit(function() {
+		var key = { };
+		key["appId"] = $("#appId").val();
+		key["token"] = $("#authToken").val();
 
-	OWF.Preferences.setUserPreference({
-		namespace: "nokiaMaps",
-		name: 'nokiaKey',
-		value: OWF.Util.toString(key),
-		onSuccess: function() {},
-		onFailure: function() {}
+		OWF.Preferences.setUserPreference({
+			namespace: "nokiaMaps",
+			name: 'nokiaKey',
+			value: OWF.Util.toString(key),
+			onSuccess: function() {},
+			onFailure: function() {}
+		});
 	});
-});
-
 </script>
 
 <form id="nokiaKeyForm">

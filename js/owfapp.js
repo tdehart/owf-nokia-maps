@@ -99,6 +99,13 @@ if (OWF.Util.isRunningInOWF()) {
                 Map.getDirections(msg[0], msg[1]);
             });
 
+            OWF.Intents.receive({
+                action: 'plotQuakes',
+                dataType: 'application/vnd.owf.sample.quakes'
+            }, function(sender, intent, msg) {
+                Map.placeMarkers(msg);
+            });
+
             // Inserting button that allows the user remove the API Key preference
             OWF.Chrome.insertHeaderButtons({
                 pos: 0,

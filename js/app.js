@@ -132,6 +132,37 @@ var Map = {
         });
     },
 
+    createIcon: function(magnitude, color) {
+        var iconSVG =
+            '<svg width="33" height="33" xmlns="http://www.w3.org/2000/svg">' +
+            '<circle stroke="__ACCENTCOLOR__" fill="__MAINCOLOR__" cx="0" cy="0" r="__RADIUS__" />' +
+            '</svg>';
+
+        var svgParser = new nokia.maps.gfx.SvgParser();
+        var svg = iconSVG
+            .replace(/__RADIUS__/g, magnitude)
+            .replace(/__ACCENTCOLOR__/g, "#FFF")
+            .replace(/__MAINCOLOR__/g, color);
+        return new nokia.maps.gfx.GraphicsImage(svgParser.parseSvg(svg));
+    },
+
+    placeMarkers: function(objs) {
+        var me = this;
+        me.clear();
+        var earthquakeContainer = new nokia.maps.map.Container();
+        for (var i = 0; i < objs.length; i++) {
+            // var quake = JSON.parse(objs[i]);
+            var quake = objs[i];
+            var coords = JSON.parse(quake.coords);
+            var mag = JSON.parse(quake.mag) + 3;
+            var markerIcon = me.createIcon(mag, "#43A51B");
+            var marker = new nokia.maps.map.Marker([coords[0], coords[1]], { icon: markerIcon });
+            earthquakeContainer.objects.add(marker);
+        }
+        me.results.push(earthquakeContainer);
+        this.map.objects.add(earthquakeContainer);
+    },
+
     addInfoBubble: function(marker, obj) {
         var me = this;
         marker.addListener(
