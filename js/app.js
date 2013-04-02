@@ -157,18 +157,26 @@ var Map = {
             var mag = JSON.parse(quake.mag) + 3;
             var markerIcon = me.createIcon(mag, "#43A51B");
             var marker = new nokia.maps.map.Marker([coords[0], coords[1]], { icon: markerIcon });
+            me.addInfoBubble(marker, {"place":"70km SW of Diwopu, China", "time":"2013-03-29 05:01:11", "link":"http://earthquake.usgs.gov/earthquakes/eventpage/usb000fvfx"});
             earthquakeContainer.objects.add(marker);
         }
         me.results.push(earthquakeContainer);
+
         this.map.objects.add(earthquakeContainer);
     },
 
     addInfoBubble: function(marker, obj) {
         var me = this;
+        var label;
         marker.addListener(
         me.CLICK, function(evt) {
             // Set the tail of the bubble to the coordinate of the marker
-            var label = "<h2>" + obj.name + "</h2>" + "<p>" + obj.address + "<br />" + obj.phoneNumber + "</p>";
+            if (obj.place) {
+                label = "<h2>" + obj.place + "</h2>" + "<p>" + obj.time + "<br />" + obj.link + "</p>";
+            } else {
+                label = "<h2>" + obj.name + "</h2>" + "<p>" + obj.address + "<br />" + obj.phoneNumber + "</p>";
+            }
+
             me.infoBubbles.openBubble(label, marker.coordinate);
         });
     },
