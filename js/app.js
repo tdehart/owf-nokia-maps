@@ -146,22 +146,28 @@ var Map = {
         return new nokia.maps.gfx.GraphicsImage(svgParser.parseSvg(svg));
     },
 
-    placeMarkers: function(objs) {
+    plotEarthquakes: function(quakes) {
         var me = this;
         me.clear();
         var earthquakeContainer = new nokia.maps.map.Container();
-        for (var i = 0; i < objs.length; i++) {
-            // var quake = JSON.parse(objs[i]);
-            var quake = objs[i];
-            var coords = JSON.parse(quake.coords);
-            var mag = JSON.parse(quake.mag) + 3;
-            var markerIcon = me.createIcon(mag, "#43A51B");
-            var marker = new nokia.maps.map.Marker([coords[0], coords[1]], { icon: markerIcon });
-            me.addInfoBubble(marker, {"place":"70km SW of Diwopu, China", "time":"2013-03-29 05:01:11", "link":"http://earthquake.usgs.gov/earthquakes/eventpage/usb000fvfx"});
-            earthquakeContainer.objects.add(marker);
-        }
-        me.results.push(earthquakeContainer);
 
+        quakes.forEach(function(quake) {
+          var color;
+          if (quake.mag <= 3) {
+            color = "#43A51B";
+          } else if (quake.mag <= 6.9) {
+            color = "#FF7F40";
+          } else {
+            color = "#CD0220";
+          }
+
+          var markerIcon = me.createIcon(quake.mag + 3, color);
+          var marker = new nokia.maps.map.Marker([quake.coords[1], quake.coords[0]], { icon: markerIcon })
+          me.addInfoBubble(marker, {place: quake.place, "time":"2013-03-29 05:01:11", link: quake.url, mag: quake.mag});
+          earthquakeContainer.objects.add(marker);
+        });
+
+        me.results.push(earthquakeContainer);
         this.map.objects.add(earthquakeContainer);
     },
 
@@ -172,7 +178,10 @@ var Map = {
         me.CLICK, function(evt) {
             // Set the tail of the bubble to the coordinate of the marker
             if (obj.place) {
-                label = "<h2>" + obj.place + "</h2>" + "<p>" + obj.time + "<br />" + obj.link + "</p>";
+                label = "<h2>" + obj.place + "</h2>" + 
+                        "<h4>" + "Magnitude: " + obj.mag + "<br />" + 
+                        "Date: " + obj.time + "<br /><br />" + 
+                        obj.link + "</h4>";
             } else {
                 label = "<h2>" + obj.name + "</h2>" + "<p>" + obj.address + "<br />" + obj.phoneNumber + "</p>";
             }

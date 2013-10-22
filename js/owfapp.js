@@ -103,7 +103,7 @@ if (OWF.Util.isRunningInOWF()) {
                 action: 'plotQuakes',
                 dataType: 'application/vnd.owf.sample.quakes'
             }, function(sender, intent, msg) {
-                Map.placeMarkers(msg);
+                Map.plotEarthquakes(msg);
             });
 
             // Inserting button that allows the user remove the API Key preference
